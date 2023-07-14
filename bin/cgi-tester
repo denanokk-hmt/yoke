@@ -1,0 +1,8 @@
+
+#######################
+#
+CGI_BIN() {
+
+  echo "HELLO"
+  ERR_CHK "hello"
+}

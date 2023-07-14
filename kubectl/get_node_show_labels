@@ -1,0 +1,53 @@
+
+#############################
+#Get k8s node show labels
+#
+GET_NODE_SHOW_LABELS() {
+
+  #args
+  cluster_name=$1
+  label_filter=$2
+  user=$3
+
+  #dir
+  yoked=${TOPD}
+
+  #Get config context
+  context=`cat ${yoked}/kubectl/cluster_contexts | \
+  grep ${cluster_name} | \
+  awk '{print $3}'`
+
+  #amari imi ga nai ga hardcoding yori mashi???
+  pw=`cat ${yoked}/user/config | awk -v u=$user 'NR==u{print}' | xxd -p -r | xxd -p -r`
+
+  
+#get node labels
+su - root << EOF
+${pw}
+
+#swith context
+kubectl config use-context ${context} >> ${TMP}-kubectl_use-context_${PN}
+
+#get node labels
+kubectl get nodes --show-labels | awk 'NR==2 {print}' | cut -d' ' -f17 > ${TMP}-node_show_labels_results_${PN}
+EOF
+
+labels=`cat ${TMP}-node_show_labels_results_${PN}`
+arr=(${labels//,/ })
+for l in "${arr[@]}";
+do
+  arr2=(${l//=/ })
+  if [ "${arr2[0]}" = "${label_filter}" ]; then
+    LABEL_VALUE=${arr2[1]}
+    break
+  fi
+done
+
+if [ -n "${LABEL_VALUE}" ]; then
+  echo $LABEL_VALUE > ${TMP}-kubectl_results_${PN} 
+else
+  echo ${labels} > ${TMP}-kubectl_results_${PN} 
+fi
+
+  ERR_CHK "get node show labels ${server_code}"
+}

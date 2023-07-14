@@ -1,0 +1,10 @@
+
+############################
+#
+GAINLASTROW() {
+  cat ${TOPD}/user/config | \
+    awk 'END{print}' | \
+    xxd -p -r | xxd -p -r | \
+    cut -d' ' -f2 > ${TMP}-last_${PN}
+  return 0
+}

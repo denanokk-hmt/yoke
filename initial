@@ -1,0 +1,35 @@
+
+######################
+#Initial 
+INITIAL() {
+
+  #tmp dir & prefix
+  TMP=/var/tmp/tmp/tmp
+
+  #create dir
+  if [ -e "/var/tmp/process" ]; then
+    :
+  else
+    mkdir /var/tmp/process
+  fi
+
+  #create dir
+  if [ -e "/var/tmp/tmp" ]; then
+    :
+  else
+    mkdir /var/tmp/tmp
+  fi
+
+  #delete a day old process number
+  days_ago=$(date -d '3 days ago' '+%Y%m%d')
+  rm -f /var/tmp/process/${days_ago}_*
+
+  #delete a day old tmp files 
+  rm -f /var/tmp/tmp/tmp*${days_ago}_*
+  
+  #set process number
+  PN=`date +%Y%m%d`_$$
+  echo ${PN} > /var/tmp/process/`echo ${PN}`
+
+  ERR_CHK "INITIAL"
+}

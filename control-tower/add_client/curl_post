@@ -1,0 +1,96 @@
+
+#######################
+#
+CURL_POST_ADD_CLIENT() {
+  
+  #cat ${TMP}-query_${PN}  
+
+  #Set var values from get query parameters
+  version=`cat ${TMP}-query_${PN} | awk '$1=="version"{print $2}'`
+  token=`cat ${TMP}-query_${PN} | awk '$1=="token"{print $2}'`
+  zzz=`cat ${TMP}-query_${PN} | awk '$1=="zzz"{print $2}'`
+  appli_name=`cat ${TMP}-query_${PN} | awk '$1=="appli_name"{print $2}'`
+  lb_domain=`cat ${TMP}-query_${PN} | awk '$1=="lb_domain"{print $2}'`
+  pre_svc_b=`cat ${TMP}-query_${PN} | awk '$1=="pre_svc_b"{print $2}'`
+  pre_svc_k=`cat ${TMP}-query_${PN} | awk '$1=="pre_svc_k"{print $2}'`
+  pre_svc_n=`cat ${TMP}-query_${PN} | awk '$1=="pre_svc_n"{print $2}'`
+  pre_svc_a=`cat ${TMP}-query_${PN} | awk '$1=="pre_svc_a"{print $2}'`
+  prd_svc_b=`cat ${TMP}-query_${PN} | awk '$1=="prd_svc_b"{print $2}'`
+  prd_svc_k=`cat ${TMP}-query_${PN} | awk '$1=="prd_svc_k"{print $2}'`
+  prd_svc_n=`cat ${TMP}-query_${PN} | awk '$1=="prd_svc_n"{print $2}'`
+  prd_svc_a=`cat ${TMP}-query_${PN} | awk '$1=="prd_svc_a"{print $2}'`
+  prd_svc_c=`cat ${TMP}-query_${PN} | awk '$1=="prd_svc_c"{print $2}'`
+  prd_svc_cg=`cat ${TMP}-query_${PN} | awk '$1=="prd_svc_cg"{print $2}'`
+  pre_client=`cat ${TMP}-query_${PN} | awk '$1=="pre_client"{print $2}'`
+  subscription_suffix=`cat ${TMP}-query_${PN} | awk '$1=="subscription_suffix"{print $2}'`
+  prd_client=`cat ${TMP}-query_${PN} | awk '$1=="prd_client"{print $2}'`
+  region=`cat ${TMP}-query_${PN} | awk '$1=="region"{print $2}'`
+  client=`cat ${TMP}-query_${PN} | awk '$1=="client"{print $2}'`
+  client_domain=`cat ${TMP}-query_${PN} | \
+    awk '$1=="client_domain"{print $2}' | \
+    awk -F',' '{for(i=1;i<=NF;i++)printf("\""$i"\",")}END{printf("\n")}' | \
+    sed -e 's/,$//'`
+  operator_system_name=`cat ${TMP}-query_${PN} | awk '$1=="operator_system_name"{print $2}'`
+  operator_system_configs=`cat ${TMP}-query_${PN} | awk '$1=="operator_system_configs"{print $2}'`
+  keel_operator_system_config_credentials_oksky_domain=`cat ${TMP}-query_${PN} | awk '$1=="keel_operator_system_config_credentials_oksky_domain"{print $2}'`
+  keel_operator_system_config_credentials_oksky_tenant=`cat ${TMP}-query_${PN} | awk '$1=="keel_operator_system_config_credentials_oksky_tenant"{print $2}'`                                                           
+  keel_operator_system_config_credentials_oksky_op_uid=`cat ${TMP}-query_${PN} | awk '$1=="keel_operator_system_config_credentials_oksky_op_uid"{print $2}'`                                                           
+  keel_operator_system_config_credentials_oksky_admin_access_token=`cat ${TMP}-query_${PN} | awk '$1=="keel_operator_system_config_credentials_oksky_admin_access_token"{print $2}'`
+  keel_operator_system_config_credentials_oksky_admin_uid=`cat ${TMP}-query_${PN} | awk '$1=="keel_operator_system_config_credentials_oksky_admin_uid"{print $2}'`
+  keel_operator_system_config_credentials_oksky_client_code=`cat ${TMP}-query_${PN} | awk '$1=="keel_operator_system_config_credentials_oksky_client_code"{print $2}'`                                                      
+  prd_token=`cat ${TMP}-query_${PN} | awk '$1=="prd_token"{print $2}'`
+  sheet_id_answers=`cat ${TMP}-query_${PN} | awk '$1=="sheet_id_answers"{print $2}'`
+  sheet_id_response=`cat ${TMP}-query_${PN} | awk '$1=="sheet_id_response"{print $2}'`
+  sheet_id_newest=`cat ${TMP}-query_${PN} | awk '$1=="sheet_id_newest"{print $2}'`
+   
+
+  #Curl
+  result=`curl -X POST https://control-tower2.bwing.app/hmt/post/add/client \
+  -H "Content-Type: application/json" \
+  -d @- <<- EOF
+{
+  "version" : "${version}",
+  "token" : "${token}",
+  "zzz" : "${zzz}",
+  "appli_name" : "${appli_name}",
+  "lb_domain" : "${lb_domain}",
+  "pre_svc" : {
+  "b" : "${pre_svc_b}",
+    "k" : "${pre_svc_k}",
+    "n" : "${pre_svc_n}",
+    "a" : "${pre_svc_a}"
+  },
+  "prd_svc" : {
+    "b" : "${prd_svc_b}",
+    "k" : "${prd_svc_k}",
+    "n" : "${prd_svc_n}",
+    "a" : "${prd_svc_a}",
+    "c" : "${prd_svc_c}",
+    "cg" : "${prd_svc_cg}"
+  },
+  "pre_client" : "${pre_client}",
+  "prd_client" : "${prd_client}",
+  "subscription_suffix" : "${subscription_suffix}",
+  "region" : "${region}",
+  "client" : "${client}",
+  "client_domain": [${client_domain}],
+  "operator_system_name" : "${operator_system_name}",
+  "operator_system_configs" : "${operator_system_configs}",
+  "keel_operator_system_config_credentials" : {
+    "oksky" : {
+    "domain": "${keel_operator_system_config_credentials_oksky_domain}",
+    "tenant": "${keel_operator_system_config_credentials_oksky_tenant}",
+    "op_uid": "${keel_operator_system_config_credentials_oksky_op_uid}",
+    "admin_access_token": "${keel_operator_system_config_credentials_oksky_admin_access_token}",
+    "admin_uid": "${keel_operator_system_config_credentials_oksky_admin_uid}",
+    "client_code": "${keel_operator_system_config_credentials_oksky_client_code}"
+    }
+  }, 
+  "prd_token" : "${prd_token}",
+  "sheet_id_answers" : "${sheet_id_answers}",
+  "sheet_id_response" : "${sheet_id_response}",
+  "sheet_id_newest" : "${sheet_id_newest}"
+}
+EOF`
+echo $result > ${TMP}-cgi_bin_result_${PN}
+}

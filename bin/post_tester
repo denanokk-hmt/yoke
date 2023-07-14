@@ -1,0 +1,58 @@
+
+#######################
+#
+CGI_BIN() {
+  
+  cat ${TMP}-query_${PN}
+
+#":[\"hmt.svc-api.com,www.google.com\"],\
+
+  client_domain=`cat ${TMP}-query_${PN} | awk '$1=="client_domain"{print $2}' | awk -F',' '{for(i=1;i<=NF;i++)printf("\""$i"\",")}END{printf("\n")}' | sed -e 's/,$//'`
+  echo $client_domain
+
+  result=`curl -X POST https://control-tower2.bwing.app/hmt/post/curl/tester \
+  -H "Content-Type: application/json" \
+  -d @- <<- EOF
+{
+  "version" : "2.0.0",
+  "token" : "g3Ypb305XXoMHqf6x2KImnmAZ/wssRzEj7KQQQBQwH5qMB4kAt8fUvo3ThRSO9NUXaAB14/ECsbpopFjPSpj7ZCUmcv3v1SI",
+  "appli_name" : "add_client",
+  "lb_domain" : "svc",
+  "pre_svc" : {
+    "b" : "svc",
+    "k" : "svc",
+    "n" : "svc",
+    "a" : "svc"
+  },
+  "prd_svc" : {
+    "b" : "svc",
+    "k" : "svc",
+    "n" : "svc",
+    "a" : "svc",
+    "c" : "svc",
+    "cg" : "svc"
+  },
+  "pre_client" : "svc",
+  "prd_client" : "tester333",
+  "region" : "E",
+  "client" : "PRD_CLIENT",
+  "client_domain": [${client_domain}],
+  "operator_system_name" : "oksky",
+  "operator_system_configs" : "op_system_configs_templates",
+  "keel_operator_system_config_credentials" : {
+    "oksky" : {
+    "domain": "https://tester333.ok-sky.com",
+    "tenant": "tester333-chat",
+    "op_uid": "111",
+    "admin_access_token": "tester333-12345",
+    "client_code": "tester333-12345"
+    }
+  }, 
+  "prd_token" : "CREATION",
+  "sheet_id_answers" : "tester333",
+  "sheet_id_response" : "tester333",
+  "sheet_id_newest" : "tester333"
+}
+EOF`
+echo $result > ${TMP}-cgi_bin_result_${PN}
+}

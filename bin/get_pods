@@ -1,0 +1,66 @@
+
+############################
+#WhatYa V2 server restart
+#
+CGI_BIN() {
+  
+  #configure name(ns + kind)
+  conf_name=scheme_server-code_cluster
+
+  #Read deploy restaart module
+  . ${TOPD}/user/converter
+  . ${TOPD}/control-tower/get_configure/curl_post
+  . ${TOPD}/kubectl/get_pods
+  ERR_CHK "Read modules"
+
+  GAINLASTROW
+  user=`cat ${TMP}-last_${PN}`
+
+  #Get server-code_cluster configure
+  CURL_POST_GET_CONFIGURE ${conf_name} 
+  
+  #get restart server codes
+  servers=`cat ${TMP}-query_${PN} | awk '$1=="servers" {print $2}'`
+  
+  #Grep configure by query servers
+  arr=(${servers//,/ })
+  for Q in "${arr[@]}";
+  do
+    cat ${TMP}-${conf_name}_${PN} | grep ${Q} >> ${TMP}-${conf_name}_grep_${PN} 
+  done
+ 
+  #uniq
+  cat ${TMP}-${conf_name}_grep_${PN} | sort | uniq > ${TMP}-${conf_name}_uniq_${PN}
+
+  #Restart k8s deploy
+  while read line
+  do
+    row=`echo $line | rev | cut -c 2- | rev`
+    configure=`echo $row | \
+    awk '{
+      cnt=split($0, arry, ",");
+      for (i=1; i<=cnt; i++)
+        print arry[i]
+    }'`
+    #Split
+    arr=(${configure})
+    for Q in "${arr[@]}";
+    do
+      obj=(${Q//:/ })
+      #echo "${obj[0]} ${obj[1]}"
+      if [ "${obj[0]}" = "cluster" ]; then
+        cluster_name=${obj[1]}
+      elif [ "${obj[0]}" = "server_code" ]; then
+        server_code=${obj[1]} 
+      elif [ "${obj[0]}" = "appli" ]; then
+        appli=${obj[1]} 
+      else
+        :
+      fi  
+    done
+    #call exe restart
+    GET_PODS ${cluster_name} ${server_code} ${appli} ${user}
+  done < ${TMP}-${conf_name}_uniq_${PN}
+
+  cat ${TMP}-kubectl_results_${PN} > ${TMP}-cgi_bin_result_${PN}
+}

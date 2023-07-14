@@ -1,0 +1,14 @@
+
+############################
+#WhatYa V2 revert client
+#
+CGI_BIN() {
+  
+  #Read module
+  . ${TOPD}/control-tower/revert_client/curl_post
+  ERR_CHK "Read module:/control-tower/revert_client/curl_post"
+  
+  #Revert client configuration
+  CURL_POST_REVERT_CLIENT
+
+}

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+cluster_config=$1
+cluster_name=$2
+svc=$3
+
+kubectl config use-context gke_bwing-230309_asia-east1-a_k8s-cluster-hmt-stg2
+kubectl get pods -n svc

@@ -1,0 +1,14 @@
+flightboard prd gke_bwing-230309_asia-east1-a_k8s-cluster-flight-board-common-prd
+flightboard prd6 gke_bwing-230309_asia-east1-a_k8s-cluster-flight-board-common-prd6
+boarding prd2 gke_bwing-230309_asia-east1-a_k8s-cluster-hmt-boarding-prd2
+cabin prd2 gke_bwing-230309_asia-east1-a_k8s-cluster-hmt-cabin-prd2
+cabin prd6 gke_bwing-230309_asia-east1-a_k8s-cluster-hmt-cabin-prd6
+keel prd2 gke_bwing-230309_asia-east1-a_k8s-cluster-hmt-keel-prd2
+smb prd2 gke_bwing-230309_asia-east1-a_k8s-cluster-hmt-smb-prd2
+stg stg2 gke_bwing-230309_asia-east1-a_k8s-cluster-hmt-stg2
+supporter prd2 gke_bwing-230309_asia-east1-a_k8s-cluster-hmt-supporter-prd2
+dev dev gke_learnlearn-208609_asia-east1-a_k8s-cluster-hmt-dev
+boarding prd3 gke_bwing-230309_asia-northeast1-a_k8s-cluster-hmt-boarding-prd3
+keel prd3 gke_bwing-230309_asia-northeast1-a_k8s-cluster-hmt-keel-prd3
+cabin prd3 gke_bwing-230309_asia-northeast1-a_k8s-cluster-hmt-cabin-prd3
+supporter prd3 gke_bwing-230309_asia-northeast1-a_k8s-cluster-hmt-supporter-prd3

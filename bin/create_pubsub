@@ -1,0 +1,102 @@
+
+############################
+#Create pubsub topic & subscription
+#
+#client
+#environment
+#
+CGI_BIN() {
+  
+  #Read module
+  . ${TOPD}/user/converter
+  . ${TOPD}/control-tower/get_formation/curl_post
+  . ${TOPD}/control-tower/get_configure/curl_post
+  . ${TOPD}/gcloud/pubsub_topics_create
+  . ${TOPD}/gcloud/pubsub_subscriptions_create_push
+  ERR_CHK "Read modules"
+
+  GAINLASTROW
+  user=`cat ${TMP}-last_${PN}`
+  
+  #args
+  client=`cat ${TMP}-query_${PN} | awk '$1=="client"{print $2}'`
+  environment=`cat ${TMP}-query_${PN} | awk '$1=="environment"{print $2}'`
+  suffix=`cat ${TMP}-query_${PN} | awk '$1=="suffix"{print $2}'`
+  zzz=${suffix}
+  cabin_topics=`cat ${TMP}-query_${PN} | awk '$1=="cabin_topics"{print $2}'`
+  keel_topics=`cat ${TMP}-query_${PN} | awk '$1=="keel_topics"{print $2}'`
+  keel_subscription=`cat ${TMP}-query_${PN} | awk '$1=="keel_subscription"{print $2}'`
+
+  #Get configure server_code-server_domain
+  CURL_POST_GET_FORMATION ${client} ${environment} ${zzz}
+  
+  #pick up $domain
+  domain=`cat ${TMP}-get_formation_${client}_${PN} | \
+    sed -e 's/,/\n/g' | \
+    awk -F':' '$1=="keel"{print $3}'`
+
+  #server_code
+  server_code=`echo ${domain} | cut -d'-' -f1`
+
+  #cabin topic name
+  cabin_topic_name=cabin_${client}_${environment}
+
+  #keel topic name
+  keel_topic_name=keel_${client}_${environment}
+
+  #get subscription name
+  subscription_name=${keel_topic_name}_push
+
+  #add suffix
+  if [ -n "${suffix}" ]; then
+    keel_topic_name=${keel_topic_name}_${suffix}
+    subscription_name=${subscription_name}_${suffix}
+  fi
+
+  #configure name(ns + kind)
+  conf_name=project_id_server_code-project_id
+  
+  #Get project id configure
+  CURL_POST_GET_CONFIGURE ${conf_name} 
+
+  #Grep server code in configure
+  cat ${TMP}-${conf_name}_${PN} | grep ${server_code} > ${TMP}-${conf_name}_grep_${PN}
+
+  #pick up project_id
+  configure=`cat ${TMP}-${conf_name}_grep_${PN} | rev | cut -c 2- | rev`
+  configure=`echo $configure | \
+  awk '{
+    cnt=split($0, arry, ",");
+    for (i=1; i<=cnt; i++)
+      print arry[i]
+  }'`
+  #Split
+  arr=(${configure})
+  for Q in "${arr[@]}";
+  do
+    obj=(${Q//:/ })
+    #echo "${obj[0]} ${obj[1]}"
+    if [ "${obj[0]}" = "id" ]; then
+      project_id=${obj[1]}
+      break
+    fi  
+  done
+  
+  #create cabin pubsub topic
+  if [ "${cabin_topics}" = "create" ]; then
+    PUBSUB_TOPICS_CREATE ${project_id} ${cabin_topic_name} ${user}
+    cat ${TMP}-pubsub_topics_${cabin_topic_name}_${PN} >> ${TMP}-cgi_bin_result_${PN}
+  fi
+
+  #create keel pubsub topic
+  if [ "${keel_topics}" = "create" ]; then
+    PUBSUB_TOPICS_CREATE ${project_id} ${keel_topic_name} ${user}
+    cat ${TMP}-pubsub_topics_${keel_topic_name}_${PN} >> ${TMP}-cgi_bin_result_${PN}
+  fi
+
+  #create subscription in the topics
+  if [ "${keel_subscription}" = "create" ]; then
+    PUBSUB_SUBSCRIPTIONS_CREATE ${project_id} ${keel_topic_name} ${subscription_name} ${domain} ${client} ${user}
+    cat ${TMP}-pubsub_subscriptions_${subscription_name}_${PN} >> ${TMP}-cgi_bin_result_${PN}
+  fi
+}

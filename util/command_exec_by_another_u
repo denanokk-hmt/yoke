@@ -1,0 +1,22 @@
+
+#############################
+#Change user exec command
+#
+COMMAND_EXEC_BY_ANOTHER_U() {
+user=$1
+pw=$2
+dir=$3
+command=$4
+
+echo $user,$pw,$dir,$command
+
+#command_path=$3
+su - ${user} << EOF
+${pw}
+#kubectl config use-context gke_bwing-230309_asia-east1-a_k8s-cluster-hmt-stg2
+#kubectl get pods -n svc
+`${dir}/${command}`
+EOF
+
+
+}

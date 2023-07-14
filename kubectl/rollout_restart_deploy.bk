@@ -1,0 +1,39 @@
+
+#############################
+#RESTART DEPLOYMENT
+#
+ROLLOUT_RESTART_DEPLOY() {
+
+  #args
+  cluster_name=$1
+  server_code=$2
+  appli=$3
+  user=$4
+  deploy=${server_code}-hmt-${appli}
+
+  #dir
+  yoked=${TOPD}
+
+  #Get config context
+  context=`cat ${TOPD}/kubectl/cluster_contexts | \
+  grep ${cluster_name} | \
+  awk '{print $3}'`
+
+  #amari imi ga nai ga hardcoding yori mashi???
+  pw=`cat ${TOPD}/user/config | awk -v u=$user 'NR==u{print}' | xxd -p -r | xxd -p -r`
+
+  
+#server restart
+su - root << EOF
+${pw}
+
+#swith context
+kubectl config use-context ${context} >> ${TMP}-kubectl_use-context_${PN}
+
+#restart
+kubectl rollout restart deploy/${deploy} -n ${server_code} >> ${TMP}-kubectl_results_${PN}
+
+EOF
+
+  ERR_CHK "rollout restart deploy ${server_code}"
+}

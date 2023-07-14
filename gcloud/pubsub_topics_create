@@ -1,0 +1,34 @@
+
+############################
+#Create pubsub topic
+#
+#$1:project_id [req]
+#$2:topic_name [req]
+#
+PUBSUB_TOPICS_CREATE() {
+
+  #args
+  project_id=$1
+  topic_name=$2
+  user=$3
+
+  #amari imi ga nai ga hardcoding yori mashi???
+  pw=`cat ${TOPD}/user/config | awk -v u=$user 'NR==u{print}' | xxd -p -r | xxd -p -r`
+
+
+su - root << EOF
+${pw}
+
+#Set gcloud project
+gcloud config set project ${project_id} 
+  
+#create pubsub topic
+gcloud pubsub topics create projects/${project_id}/topics/${topic_name}
+
+EOF
+
+  #Error check
+  ERR_CHK "pubsub topics create:projects/${project_id}/topics/${topic_name}"
+  
+  echo "Created topics projects/${project_id}/topics/${topic_name}" > ${TMP}-pubsub_topics_${topic_name}_${PN}
+}

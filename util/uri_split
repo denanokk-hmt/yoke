@@ -1,0 +1,44 @@
+
+#############################
+#REQUEST URI PATH SPLIT
+#
+URI_PATH_SPLIT() {
+
+  path=`echo ${REQUEST_URI} | cut -d'?' -f1`
+
+  #Split
+  arr=(${path//// })
+  for Q in "${arr[@]}";
+  do
+    echo $Q >> ${TMP}-path_${PN}
+  done
+
+  ERR_CHK "uri_path split"
+}
+
+
+############################
+#REQUEST URI QUERY SPLIT
+#
+URI_QUERY_SPLIT() {
+
+  #divide path & query
+  query=`echo ${REQUEST_URI} | cut -d'?' -f2 | \
+  awk '{
+    cnt=split($0,arry,"&");
+    for (i=1;i<=cnt;i++)
+      print arry[i]
+  }'`
+
+  #Split
+  arr=(${query})
+  for Q in "${arr[@]}";
+  do
+    param=(${Q//=/ })
+    #name value
+    echo "${param[0]} ${param[1]}" >> ${TMP}-query_${PN}
+  done
+
+  ERR_CHK "uri_query split"
+
+}

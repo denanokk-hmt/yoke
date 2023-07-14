@@ -1,0 +1,43 @@
+
+#######################
+#
+CURL_POST_REVERT_CLIENT() {
+  
+  #cat ${TMP}-query_${PN}  
+
+  version=`cat ${TMP}-query_${PN} | awk '$1=="version"{print $2}'`
+  token=`cat ${TMP}-query_${PN} | awk '$1=="token"{print $2}'`
+  appli_name=revert_client
+  prd_client=`cat ${TMP}-query_${PN} | awk '$1=="prd_client"{print $2}'`
+  zzz=`cat ${TMP}-query_${PN} | awk '$1=="zzz"{print $2}'`
+   
+
+  #Curl
+  result=`curl -X POST https://control-tower2.bwing.app/hmt/post/revert/client \
+  -H "Content-Type: application/json" \
+  -d @- <<- EOF
+{
+  "version" : "${version}",
+  "token" : "${token}",
+  "appli_name" : "${appli_name}",
+  "pre_svc" : {
+  "b" : "${pre_svc_b}",
+    "k" : "${pre_svc_k}",
+    "n" : "${pre_svc_n}",
+    "a" : "${pre_svc_a}"
+  },
+  "prd_svc" : {
+    "b" : "${prd_svc_b}",
+    "k" : "${prd_svc_k}",
+    "n" : "${prd_svc_n}",
+    "a" : "${prd_svc_a}",
+    "c" : "${prd_svc_c}",
+    "cg" : "${prd_svc_cg}"
+  },
+  "pre_client" : "${pre_client}",
+  "prd_client" : "${prd_client}",
+  "zzz" : "${zzz}"
+}
+EOF`
+echo $result > ${TMP}-cgi_bin_result_${PN}
+}

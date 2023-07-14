@@ -1,0 +1,170 @@
+
+#############################
+#Deploy server latest version
+# args
+# 13: env:text--> dev or stg or prd
+# $2: svc:text--> svc
+# $1: applitext--> keel,
+DEPLOY_SERVER_LATEST() {
+
+  #args
+  cluster=$1
+  env=$2
+  use=$3
+  svc=$4
+  appli=$5
+  series=$6
+  user=$7
+
+  #base
+  deploy=${svc}-hmt-${appli}
+  series_num=$(echo $series | sed -e s/v//)
+
+  #dir
+  yoked=${TOPD}
+  deployd=${TOPD}/deployer
+  settingsd=${deployd}/settings/hmt-${series}-settings
+  release_v_d=${deployd}/release/hmt-release-versions
+  released=${deployd}/release/release-hmt-${series}-${appli}
+
+  #amari imi ga nai ga hardcoding yori mashi???
+  pw=`cat ${yoked}/user/config | awk -v u=$user 'NR==u{print}' | xxd -p -r | xxd -p -r`
+
+  #use this error file instead of /dev/null 
+  echo "" > ${TMP}-deploy_server_latest_errors_${PN}
+
+  #get cluster node region, set zone(--> defalt:a)
+  . ${TOPD}/kubectl/get_node_show_labels
+  GET_NODE_SHOW_LABELS ${cluster} 'topology.kubernetes.io/region' ${user}
+  zone=`cat ${TMP}-kubectl_results_${PN}`-a
+
+#########################
+#get release produciton branch name
+su - root << EOF
+${pw}
+
+#get service version
+(cd ${release_v_d}/${series} && \
+git pull && \
+cat service) > ${TMP}-deployer_hmt_service_version_${PN}
+
+#get list of branch & grep by series
+(cd ${released} && \
+git branch -a | grep production_) > ${TMP}-deployer_production_branches_${PN}
+
+#set latest product release branch name
+cat ${TMP}-deployer_production_branches_${PN} \
+| sort | tail -n1 \
+| sed -e 's/remotes\/origin\///' > ${TMP}-deployer_production_latest_branch_${PN} 
+EOF
+
+#set latest release produciton branch name
+branch=`cat ${TMP}-deployer_production_latest_branch_${PN}`
+ERR_CHK "[deploy server latest]::get release produciton name:${deploy}"
+
+#########################
+#ready release/by_yoke_production 1
+su - root << EOF
+${pw}
+
+#checkout latest release produtcion branch (care for new branch)
+(cd ${released} && \
+git checkout ${branch} && \
+git pull) >> ${TMP}-deploy_server_latest_results_${PN} 
+
+#clean by yoke release branch
+(cd ${released} && \
+git branch -D release/by_yoke_production && \
+git push origin :release/by_yoke_production) 1>> ${TMP}-deploy_server_latest_results_${PN} 2>>${TMP}-deploy_server_latest_errors_${PN}
+
+#create yoke release branch
+(cd ${released} && \
+git checkout -b release/by_yoke_production) 1>> ${TMP}-deploy_server_latest_results_${PN} 2>>${TMP}-deploy_server_latest_errors_${PN}
+EOF
+ERR_CHK "[deploy server latest]::[ready release/by_yoke_production][1]:${deploy}"
+
+#########################
+#ready release/by_yoke_production 2
+su - root << EOF
+${pw}
+#cp gcloudignore
+(cd ${released} && \
+cp ${deployd}/configs/.gcloudignore .gcloudignore)
+(cd ${released} && \
+cp ${deployd}/configs/.dockerignore .dockerignore)
+
+##check settings dir
+#(cd ${deployd}/settings && \
+#ls -la ${settingsd}/hmt-${svc}-${env}) > ${TMP}-deployer_hmt_settings_${svc}_${PN}
+#
+##clone repo case of not define settings
+#if [ -n $(cat ${TMP}-deployer_hmt_settings_${svc}_${PN}) ]; then
+#  (cd ${settingsd} && \
+#  git clone git@bitbucket.org:svc_bs_devloper/hmt-${svc}-${env}.git) 1>> ${TMP}-deploy_server_latest_results_${PN}
+#fi
+
+#git branch master_v???
+(cd ${settingsd}/hmt-${svc}-${env} && \
+git checkout master && \
+git pull) 1>> ${TMP}-deploy_server_latest_results_${PN}
+
+#clean up svc dir in config
+(cd ${released}/config && \
+rm -rf svc*) 1>> ${TMP}-deploy_server_latest_results_${PN} 2>>${TMP}-deploy_server_latest_errors_${PN}
+EOF
+ERR_CHK "[deploy server latest]::[ready release/by_yoke_production][2]:${deploy}"
+
+#########################
+#set setting, cloudbuild
+su - root << EOF
+${pw}
+#cp svc dir in config for(keel, newest, asker)
+if [ "${appli}" = "keel" ] || [ "${appli}" = "newest" ] || [ "${appli}" = "asker" ]; then
+  (cd ${released} && \
+  cp -rp ${settingsd}/hmt-${svc}-${env}/config/${svc} ./config/) 1>> ${TMP}-deploy_server_latest_results_${PN}
+fi
+
+#cp root.json
+(cd ${released} && \
+cp ${deployd}/configs/root.json.org ./config/root.json) 1>> ${TMP}-deploy_server_latest_results_${PN}
+EOF
+ERR_CHK "[deploy server latest]::[set setting, cloudbuild][1]:${deploy}"
+
+su - root << EOF
+${pw}
+#replace root.json
+(cd ${released} && \
+sed -i.bak "s|###APPLI###|${appli}|g" ./config/root.json && \
+sed -i.bak "s|###SVC###|${svc}|g" ./config/root.json && \
+sed -i.bak "s|###USE###|${use}|g" ./config/root.json && \
+sed -i.bak "s|###SERIES###|${series}|g" ./config/root.json && \
+rm -f ./config/root.json.bak) 1>> ${TMP}-deploy_server_latest_results_${PN}
+
+#cp by_yoke_cloudbuild.yaml
+(cd ${released} && \
+cp ${deployd}/configs/by_yoke_cloudbuild.yaml.org ./by_yoke_cloudbuild.yaml) 1>> ${TMP}-deploy_server_latest_results_${PN}
+
+#replace by_yoke_cloudbuild.yaml
+(cd ${released} && \
+sed -i.bak "s|###APPLI###|${appli}|g" ./by_yoke_cloudbuild.yaml && \
+sed -i.bak "s|###ENV###|${env}|g" ./by_yoke_cloudbuild.yaml && \
+sed -i.bak "s|###SVC###|${svc}|g" ./by_yoke_cloudbuild.yaml && \
+sed -i.bak "s|###DEPLOY###|${deploy}|g" ./by_yoke_cloudbuild.yaml && \
+sed -i.bak "s|###ZONE###|${zone}|g" ./by_yoke_cloudbuild.yaml && \
+sed -i.bak "s|###CLUSTER###|${cluster}|g" ./by_yoke_cloudbuild.yaml && \
+rm -f ./by_yoke_cloudbuild.yaml.bak) 1>> ${TMP}-deploy_server_latest_results_${PN}
+EOF
+ERR_CHK "[deploy server latest]::[set setting, cloudbuild][2]:${deploy}"
+
+su - root << EOF
+${pw}
+#git commit & push, triggerd cloudbuild ByYoke-Production-*
+(cd ${released} && \
+git add -A && \
+git commit -m "by yoke deploy: ${svc}" && \
+git push -u origin release/by_yoke_production) 1>> ${TMP}-deploy_server_latest_results_${PN} 2>>${TMP}-deploy_server_latest_errors_${PN}
+cat ${TMP}-deploy_server_latest_errors_${PN} 2>/dev/null
+EOF
+ERR_CHK "[deploy server latest]::[set setting, cloudbuild][3]:${deploy}"
+
+}

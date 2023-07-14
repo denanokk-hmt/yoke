@@ -1,0 +1,58 @@
+
+############################
+#Create pubsub topic & subscription[push]
+#
+#$1:project_id [req]
+#$2:topic_name [req]
+#$3:subscription_name[req]
+#$4:domain [req]
+#$5:client [req]
+#
+PUBSUB_SUBSCRIPTIONS_CREATE() {
+
+  #args
+  project_id=$1
+  topic_name=$2
+  subscription_name=$3
+  domain=$4
+  client=$5
+  user=$6
+
+  #paramsters
+  params=`cat ${TOPD}/gcloud/pubsub_conf/subscription_push_pattern_1.conf`
+  ack_deadline=`echo "$params" | awk '$1=="ack_deadline"{print $2}'` 
+  expiration_period=`echo "$params" | awk '$1=="expiration_period"{print $2}'` 
+  message_retention_duration=`echo "$params" | awk '$1=="message_retention_duration"{print $2}'` 
+  push_endpoint=`echo "$params" | awk '$1=="push_endpoint"{print $2}' | \
+    sed -e 's/DOMAIN/'${domain}'/'| \
+    sed -e 's/CLIENT/'${client}'/'`
+  max_retry_delay=`echo "$params" | awk '$1=="max_retry_delay"{print $2}'` 
+  min_retry_delay=`echo "$params" | awk '$1=="min_retry_delay"{print $2}'` 
+
+  #amari imi ga nai ga hardcoding yori mashi???
+  pw=`cat ${TOPD}/user/config | awk -v u=$user 'NR==u{print}' | xxd -p -r | xxd -p -r`
+
+
+su - root << EOF
+${pw}
+
+#Set gcloud project
+gcloud config set project ${project_id} 
+  
+#create subscription in the topics
+gcloud pubsub subscriptions create \
+  --topic projects/${project_id}/topics/${topic_name} projects/${project_id}/subscriptions/${subscription_name} \
+  --ack-deadline=${ack_deadline} \
+  --expiration-period=${expiration_period} \
+  --message-retention-duration=${message_retention_duration} \
+  --push-endpoint=${push_endpoint} \
+  --max-retry-delay=${max_retry_delay} \
+  --min-retry-delay=${min_retry_delay} \
+  --enable-message-ordering
+EOF
+  
+  #Error check
+  ERR_CHK "pubsub subscriptions create:projects/${project_id}/subscriptions/${subscription_name}"
+
+  echo "Created subscriptions projects/${project_id}/subscriptions/${subscription_name}" > ${TMP}-pubsub_subscriptions_${subscription_name}_${PN}
+}

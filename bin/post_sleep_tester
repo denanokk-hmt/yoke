@@ -1,0 +1,16 @@
+
+#######################
+#
+CGI_BIN() {
+  
+  #Read deploy restaart module
+  . ${TOPD}/util/post_sleep
+  ERR_CHK "Read modules"
+  
+  sleep=`cat ${TMP}-query_${PN} | awk '$1=="sleep"{print $2}'`
+  echo ${sleep}
+
+  POST_SLEEP ${sleep}
+
+  cat ${TMP}-post_sleep_${PN} > ${TMP}-cgi_bin_result_${PN}
+}

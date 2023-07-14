@@ -1,0 +1,48 @@
+steps:
+# This step builds the container image.
+- name: 'gcr.io/cloud-builders/docker'
+  id: Build
+  args:
+  - 'build'
+  - '--build-arg'
+  - 'COMMITID=$SHORT_SHA'
+  - '-t'
+  - 'gcr.io/$PROJECT_ID/hmt/###APPLI###/###ENV###/###SVC###:$SHORT_SHA'
+  - '.'
+
+# This step pushes the image to Container Registry
+- name: 'gcr.io/cloud-builders/docker'
+  id: Push
+  args:
+  - 'push'
+  - 'gcr.io/$PROJECT_ID/hmt/###APPLI###/###ENV###/###SVC###:$SHORT_SHA'
+
+# This step deploy the image to k8s cluster
+- name: 'gcr.io/cloud-builders/kubectl'
+  id: Deploy
+  args:
+  - 'set'
+  - 'image'
+  - 'deploy/###DEPLOY###'
+  - '###DEPLOY###=gcr.io/$PROJECT_ID/hmt/###APPLI###/###ENV###/###SVC###:$SHORT_SHA'
+  - '-n'
+  - '###SVC###'
+  env:
+  - 'CLOUDSDK_COMPUTE_ZONE=###ZONE###'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=###CLUSTER###'
+
+# This step rollout status check on k8s cluster
+- name: 'gcr.io/cloud-builders/kubectl'
+  id: Rollout
+  args:
+  - 'rollout'
+  - 'status'
+  - 'deploy/###DEPLOY###'
+  - '-n'
+  - '###SVC###'
+  env:
+  - 'CLOUDSDK_COMPUTE_ZONE=###ZONE###'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=###CLUSTER###'
+
+#TAG
+tags : [ '###APPLI###', '###ENV###', '###SVC###' ]

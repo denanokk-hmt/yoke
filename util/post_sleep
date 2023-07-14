@@ -1,0 +1,19 @@
+
+#######################
+#
+POST_SLEEP() {
+  
+  sleep=$1
+  echo ${sleep}
+
+  result=`curl -X POST https://control-tower2.bwing.app/hmt/post/sleep/tester \
+  -H "Content-Type: application/json" \
+  -d @- <<- EOF
+{
+  "version" : "2.0.0",
+  "token" : "g3Ypb305XXoMHqf6x2KImnmAZ/wssRzEj7KQQQBQwH5qMB4kAt8fUvo3ThRSO9NUXaAB14/ECsbpopFjPSpj7ZCUmcv3v1SI",
+  "sleep" : ${sleep}
+}
+EOF`
+echo $result > ${TMP}-post_sleep_${PN}
+}

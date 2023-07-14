@@ -1,0 +1,39 @@
+
+#############################
+#Get pods in service
+#
+GET_PODS() {
+  
+  #args
+  cluster_name=$1
+  server_code=$2
+  appli=$3
+  user=$4
+  deploy=${server_code}-hmt-${appli}
+
+  #dir
+  yoked=${TOPD}
+
+  #Get config context
+  context=`cat ${yoked}/kubectl/cluster_contexts | \
+  grep ${cluster_name} | \
+  awk '{print $3}'`
+
+  #amari imi ga nai ga hardcoding yori mashi???
+  pw=`cat ${yoked}/user/config | awk -v u=$user 'NR==u{print}' | xxd -p -r | xxd -p -r`
+
+  
+#get pods
+su - root << EOF
+${pw}
+
+#swith context
+kubectl config use-context ${context} >> ${TMP}-kubectl_use-context_${PN}
+
+#get pods
+kubectl get pods -n ${server_code} >> ${TMP}-kubectl_results_${PN}
+
+EOF
+
+  ERR_CHK "get pods ${server_code}"
+}

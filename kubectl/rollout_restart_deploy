@@ -1,0 +1,58 @@
+
+#############################
+#RESTART DEPLOYMENT
+#
+ROLLOUT_RESTART_DEPLOY() {
+
+  #args
+  cluster_name=$1
+  server_code=$2
+  appli=$3
+  user=$4
+  restart_unixtime=$5
+  deploy=${server_code}-hmt-${appli}
+
+  #dir
+  yoked=${TOPD}
+
+  #Get config context
+  context=`cat ${TOPD}/kubectl/cluster_contexts | \
+  grep ${cluster_name} | \
+  awk '{print $3}'`
+
+  #amari imi ga nai ga hardcoding yori mashi???
+  pw=`cat ${TOPD}/user/config | awk -v u=$user 'NR==u{print}' | xxd -p -r | xxd -p -r`
+  
+  #echo ${restart_unixtime}
+
+#get podname
+if [ -n "${restart_unixtime}" ]; then
+su - root << EOF
+${pw}
+#switch context
+kubectl config use-context ${context} >> ${TMP}-kubectl_use-context_${PN}
+kubectl get pod -n ${server_code} | awk 'NR==2{print}' | cut -d' ' -f1 > ${TMP}-kubectl_podname_${PN}
+EOF
+fi
+podname=`cat ${TMP}-kubectl_podname_${PN}`
+#echo ${podname}
+
+#restart
+su - root << EOF
+${pw}
+kubectl config use-context ${context} >> ${TMP}-kubectl_use-context_${PN}
+if [ -n "${restart_unixtime}" ]; then
+  
+  #get commitid of env
+  #kubectl exec ${podname} env -n ${server_code} > ${TMP}-kubectl_exec_env_${PN}
+  
+  #update env
+  kubectl set env -n ${server_code} deploy/${deploy} RESTART_UNIXTIME=${restart_unixtime} >> ${TMP}-kubectl_results_${PN}
+else
+  #rollout restart
+  kubectl rollout restart deploy/${deploy} -n ${server_code} >> ${TMP}-kubectl_results_${PN}
+fi
+EOF
+
+  ERR_CHK "rollout restart deploy ${server_code}"
+}

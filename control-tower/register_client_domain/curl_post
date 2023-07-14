@@ -1,0 +1,38 @@
+
+#######################
+#Register client domain
+#
+#$1: server_code
+#
+CURL_POST_REGISTER_CLIENT_DOMAIN() {
+  
+  #args
+  server_code=$1
+
+  version=`cat ${TMP}-query_${PN} | awk '$1=="version"{print $2}'`
+  token=`cat ${TMP}-query_${PN} | awk '$1=="token"{print $2}'`
+  use=`cat ${TMP}-query_${PN} | awk '$1=="use"{print $2}'`
+  client=`cat ${TMP}-query_${PN} | awk '$1=="client"{print $2}'`
+  client_domain=`cat ${TMP}-query_${PN} | \
+    awk '$1=="client_domain"{print $2}' | \
+    awk -F',' '{for(i=1;i<=NF;i++)printf("\""$i"\",")}END{printf("\n")}' | \
+    sed -e 's/,$//'`
+  series=`cat ${TMP}-query_${PN} | awk '$1=="series"{print $2}'`
+
+  #Curl
+  result=`curl -X POST https://control-tower2.bwing.app/hmt/post/register/client/domain \
+  -H "Content-Type: application/json" \
+  -d @- <<- EOF
+{
+  "version" : "${version}",
+  "token" : "${token}",
+  "use" : "${use}",
+  "client" : "${client}",
+  "client_domain": [${client_domain}],
+  "server_code" : "${server_code}",
+  "series" : "${series}"
+}
+EOF`
+echo $result > ${TMP}-register_client_domain_curl_exec_${PN}
+echo $result >> ${TMP}-cgi_bin_result_${PN}
+}

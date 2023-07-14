@@ -1,0 +1,14 @@
+
+############################
+#WhatYa V2 add client
+#
+CGI_BIN() {
+  
+  #Read module
+  . ${TOPD}/control-tower/add_client/curl_post
+  ERR_CHK "Read module:/control-tower/add_client/curl_post"
+  
+  #Add client configuration
+  CURL_POST_ADD_CLIENT
+
+}

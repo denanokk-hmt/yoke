@@ -1,0 +1,5 @@
+#!/bin/bash -ex
+SYSD=$(pwd)
+. ${SYSD}/deploy_restart
+
+DEPLOY_RESTART stg stg2 svc-hmt-boarding svc

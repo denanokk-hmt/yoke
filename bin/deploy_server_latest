@@ -1,0 +1,81 @@
+
+############################
+#WhatYa V2 server restart
+#
+CGI_BIN() {
+
+  #configure name(ns + kind)
+  conf_name=scheme_server-code_cluster
+
+  #Read deploy server lates modules
+  . ${TOPD}/user/converter
+  . ${TOPD}/control-tower/get_configure/curl_post
+  . ${TOPD}/deployer/deploy_server_latest
+  ERR_CHK "Read modules"
+  
+  GAINLASTROW
+  user=`cat ${TMP}-last_${PN}`
+  
+  #get server-code_cluster configure
+  CURL_POST_GET_CONFIGURE ${conf_name}
+  
+  #get restart server codes
+  servers=`cat ${TMP}-query_${PN} | awk '$1=="servers" {print $2}'`
+  
+  #Grep configure by query servers
+  arr=(${servers//,/ })
+  for Q in "${arr[@]}";
+  do
+    cat ${TMP}-${conf_name}_${PN} | grep ${Q} >> ${TMP}-${conf_name}_grep_${PN} 
+  done
+ 
+  #uniq
+  cat ${TMP}-${conf_name}_grep_${PN} | sort | uniq > ${TMP}-${conf_name}_uniq_${PN}
+
+  #Deploy servers
+  while read line
+  do
+    row=`echo $line | rev | cut -c 2- | rev`
+    configure=`echo $row | \
+    awk '{
+      cnt=split($0, arry, ",");
+      for (i=1; i<=cnt; i++)
+        print arry[i]
+    }'`
+    #Split
+    arr=(${configure})
+    for Q in "${arr[@]}";
+    do
+      obj=(${Q//:/ })
+      #echo "${obj[0]} ${obj[1]}"
+      if [ "${obj[0]}" = "cluster" ]; then
+        cluster_name=${obj[1]}
+      elif [ "${obj[0]}" = "server_code" ]; then
+        svc=${obj[1]} 
+      elif [ "${obj[0]}" = "environment" ]; then
+        env=${obj[1]} 
+      elif [ "${obj[0]}" = "use" ]; then
+        use=${obj[1]} 
+      elif [ "${obj[0]}" = "appli" ]; then
+        appli=${obj[1]} 
+      elif [ "${obj[0]}" = "series" ]; then
+        series=${obj[1]} 
+      else
+        :
+      fi  
+    done
+    
+    #deploy production server
+    DEPLOY_SERVER_LATEST $cluster_name $env $use $svc $appli $series ${user}  
+  done < ${TMP}-${conf_name}_uniq_${PN}
+
+#Result
+cat << EOF > ${TMP}-cgi_bin_result_${PN}
+{
+  status_code: "0",
+  status_msg: "Success deploy server latest.",
+  #result: "`cat ${TMP}-deploy_server_latest_results_${PN}`"
+}
+EOF
+
+}

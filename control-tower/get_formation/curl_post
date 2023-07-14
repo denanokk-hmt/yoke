@@ -1,0 +1,32 @@
+
+############################
+#Get formation
+#
+#$1:client::required
+#$2:environment::required
+#
+CURL_POST_GET_FORMATION() {
+
+  client=$1
+  environment=$2
+  zzz=$3
+  
+  #Set api params
+  params=`cat ${TOPD}/control-tower/api_conf/get_formation.conf`
+  domain_path=`echo "$params" | awk '$1=="domain_path"{print $2}'`
+  version=`echo "$params" | awk '$1=="version"{print $2}'`
+  appli_name=`echo "$params" | awk '$1=="appli_name"{print $2}'`
+  token=`echo "$params" | awk '$1=="token"{print $2}'`
+
+  #join url
+  url="${domain_path}?version=${version}&environment=${environment}&appli_name=${appli_name}&token=${token}&client=${client}&zzz=${zzz}"
+
+  #Get configure data
+  curl -X GET "${url}" | \
+  cut -c 3- | \
+  rev | cut -c 2- | rev | \
+  sed -e 's/,{/\n/g' | \
+  sed 's/"//g'> ${TMP}-get_formation_${client}_${PN}
+
+  ERR_CHK "Get formation ${client}"
+}

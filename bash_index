@@ -1,0 +1,43 @@
+#!/bin/bash
+echo 'Content-type: text/html'
+echo ''
+# An empty line is needed here. So echo nothing.
+
+#Read yoke base module
+. /var/cgi/yoke-base/initial
+. /var/cgi/yoke-base/util/error_chk
+. /var/cgi/yoke-base/util/uri_split
+
+#top dir
+TOPD=/home/product_support/repo/yoke-base
+
+#initialize
+INITIAL
+
+#Get exec module 
+URI_PATH_SPLIT
+URI_QUERY_SPLIT
+repo=`cat ${TMP}-query_${PN} | awk '$1=="repo"{print $2}'`
+func=`cat ${TMP}-query_${PN} | awk '$1=="func"{print $2}'`
+
+#Read exec module
+if [ -e /var/cgi/${repo}/${func} ]; then
+  . /var/cgi/${repo}/${func}
+else
+  echo "repo::${repo}, func::${func} not find."
+  exit 0
+fi 
+
+#execute cgi
+CGI_BIN
+
+#Result response
+cat ${TMP}-cgi_bin_result_${PN}
+
+#echo '<html>'
+#echo '<head></head>'
+#echo '<body>'
+#echo "<h1>Hey Bash in Yoke!!</h1>"
+#echo "<h2>RESULT:::Success</h2>"
+#echo '</body>'
+#echo '</html>'
